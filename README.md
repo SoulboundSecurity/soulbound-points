@@ -206,6 +206,12 @@ signs messages off-chain. It never touches user funds, never calls the
 contract, never has on-chain privilege beyond being the designated signer
 recognized by the contract's signature check.
 
+Role administration follows appointment semantics: the controller
+administers both roles, and administrative authority never travels with the
+role it administers. Rotating the minter installs a new signer; it grants
+that signer no administrative power. This is the same role model as the
+[SoulBound Protocol's Role and Trust Model](https://github.com/SoulboundSecurity/sbf-protocol/blob/master/docs/PROTOCOL_SPEC.md#7-role-and-trust-model).
+
 If the minter key is compromised:
 - The attacker can sign arbitrary `ClaimApproval` messages
 - But they can only authorize claims for addresses **that currently hold an
@@ -213,9 +219,10 @@ If the minter key is compromised:
 - They cannot backfill history: the cumulative-amount monotonic rule means
   signed approvals only ever add to a user's total, never issue new tokens
   to unrelated addresses
-- The controller rotates the minter and invalidates all future signatures
-  from the old key; unclaimed in-flight approvals from the old key remain
-  valid against their specific users only
+- The controller rotates the minter, which instantly invalidates every
+  signature the old key ever produced: `claimPoints` verifies against the
+  current `minter`, so rotation is a clean kill switch on a compromised
+  signer, with no residual exposure window
 
 If the controller key is compromised: the attacker can rotate the minter
 to themselves. They still face every other gate. Mitigation is a multisig
@@ -252,7 +259,7 @@ const message = {
   user:             '0x...',
   cumulativeAmount: 123_456n * 10n ** 18n,  // 123,456 SBP total-to-date
   sbtNonce:         currentSbtNonce,        // read live from SBT contract
-  deadline:         BigInt(Math.floor(Date.now() / 1000) + 300), // 5 min
+  deadline:         BigInt(Math.floor(Date.now() / 1000) + 900), // integrator-chosen; allow comfortable wallet-confirmation time
 };
 
 const signature = await account.signTypedData({ domain, types,
