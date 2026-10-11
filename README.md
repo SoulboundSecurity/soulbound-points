@@ -188,7 +188,7 @@ ClaimApproval(address user, uint256 cumulativeAmount, uint256 sbtNonce, uint256 
 | Unauthorized minter rotation | Only the `controller` can call `setMinter` |
 | Unauthorized controller transfer | Only the current `controller` can transfer the role |
 | Zero-address writes | `InvalidAddress` revert on any administrative zero-address |
-| Allowance race (approve-attack) | Standard ERC-20; callers should use `increaseAllowance` pattern in integrations |
+| Allowance race (approve-attack) | Standard ERC-20 `approve` (no `increaseAllowance` — the surface is deliberately minimal). Integrations mitigate by setting an allowance to zero before setting a new value, or by granting an infinite allowance, which `transferFrom` supports without decrementing at `type(uint256).max` |
 | Integer overflow | Solidity 0.8+ checked arithmetic throughout; `unchecked` blocks used only where proven safe |
 
 ## Key separation and role model
